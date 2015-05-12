@@ -73,6 +73,13 @@ export default WidgetCollection.extend({
         var longitudePropertyName = this.get('longitudeProperty');
         var titlePropertyName = this.get('titleProperty');
 
+        var pinIcon = L.icon({
+            iconUrl: '/images/leaflet/marker-icon.png',
+            iconRetinaUrl: '/images/leaflet/marker-icon-2x.png',
+            iconAnchor: [12.5, 41] // needed to position the marker correctly
+        });
+
+
         var latLongs = [];
         this.get('collection').then(function(data) {
             data.forEach(function(item) {
@@ -82,7 +89,7 @@ export default WidgetCollection.extend({
                 if (latitude && longitude) {
                     let latLong = new L.LatLng(latitude, longitude);
                     latLongs.push(latLong);
-                    let marker = L.marker(latLong, { title: title });
+                    let marker = L.marker(latLong, {title: title, icon: pinIcon});
                     marker.bindPopup(title);
                     markers.addLayer(marker);
                 }
