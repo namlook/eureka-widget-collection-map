@@ -1,6 +1,6 @@
 {
   "name": "eureka-widget-collection-map",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Display an Eureka collection on a map.",
   "directories": {
     "doc": "doc",
