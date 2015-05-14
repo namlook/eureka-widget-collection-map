@@ -3,13 +3,20 @@
         <div class="panel-heading">{{{label}}}</div>
     {{/if}}
 
-    <div class="panel-body" style="height:300px;text-align:center">
-    {{#if collection.isPending}}
-        {{partial 'eureka-loading'}}
-    {{else}}
-        {{#unless collection.length}}
-            <p> no coordonates found </p>
-        {{/unless}}
-    {{/if}}
+
+
+    <div class="panel-body">
+        <p>display satellite map {{input type="checkbox" checked=displaySatelliteMap}}</p>
+        <div class="map-body" style={{mapStyle}}>
+            {{#if collection.isPending}}
+                <p>Fetching data... Please wait, it may take a while...</p>
+                {{partial 'eureka-loading'}}
+            {{else}}
+                {{!-- <div class="map-progress"><div class="map-progress-bar"></div></div> --}}
+                {{#unless collection.length}}
+                    <p> no coordonates found </p>
+                {{/unless}}
+            {{/if}}
+        </div>
     </div>
 </div>

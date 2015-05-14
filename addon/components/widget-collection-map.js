@@ -34,21 +34,49 @@ export default WidgetCollection.extend({
         return this.getWithDefault('config.maxZoom', 20);
     }),
 
+    /** map height in px **/
+    mapStyle: Ember.computed('config.height', function() {
+        var mapHeight = this.getWithDefault('config.height', 300);
+        mapHeight = parseInt(mapHeight, 10);
+        return new Ember.Handlebars.SafeString(`height:${mapHeight}px;text-align:center`);
+        // return ("height: " + mapHeight + 'px').htmlSafe();
+    }),
+
     /** mapProvider
      * see http://leaflet-extras.github.io/leaflet-providers/preview/index.html for all
      * layer available
      */
-    mapProvider: Ember.computed('config.mapProvider', function() {
+    mapProvider: Ember.computed('config.mapProvider', 'displaySatelliteMap', function() {
         // ex: 'Esri.WorldImagery'
-        return this.getWithDefault('config.mapProvider', 'MapQuestOpen.OSM');
+        var provider = 'MapQuestOpen.OSM';
+        if (this.get('displaySatelliteMap')) {
+            provider = 'Esri.WorldImagery';
+        }
+        return this.getWithDefault('config.mapProvider', provider);
     }),
 
     _map: null,
 
     collection:  Ember.computed('routeModel.query.hasChanged', 'store', function() {
         var query = this.get('routeModel.query')._toObject();
-        return this.get('store').find(query);
+        query._asJSONArray = true;
+        return this.get('store').stream(query);
     }),
+
+    // updateProgressBar: function(processed, total, elapsed, layersArray) {
+    //     var progress = this.get('progress');
+    //     var progressBar = this.get('progressBar');
+    //     if (elapsed > 1000) {
+    //         // if it takes more than a second to load, display the progress bar:
+    //         progress.style.display = 'block';
+    //         progressBar.style.width = Math.round(processed/total*100) + '%';
+    //     }
+
+    //     if (processed === total) {
+    //         // all markers processed - hide the progress bar:
+    //         progress.style.display = 'none';
+    //     }
+    // },
 
 
     renderMap: Ember.observer(
@@ -68,6 +96,7 @@ export default WidgetCollection.extend({
         var mapProvider = this.get('mapProvider');
 
         var markers = L.markerClusterGroup();
+        // var markers = L.markerClusterGroup({ chunkedLoading: true, chunkProgress: this.updateProgressBar })
 
         var latitudePropertyName = this.get('latitudeProperty');
         var longitudePropertyName = this.get('longitudeProperty');
@@ -78,7 +107,6 @@ export default WidgetCollection.extend({
             iconRetinaUrl: '/images/leaflet/marker-icon-2x.png',
             iconAnchor: [12.5, 41] // needed to position the marker correctly
         });
-
 
         var latLongs = [];
         this.get('collection').then(function(data) {
@@ -98,7 +126,6 @@ export default WidgetCollection.extend({
             // center the map into markers
             if (latLongs.length) {
                 map.fitBounds(new L.LatLngBounds(latLongs));
-                map.setZoom(zoom);
                 L.tileLayer.provider(mapProvider).addTo(map);
                 map.addLayer(markers);
             }
@@ -110,12 +137,15 @@ export default WidgetCollection.extend({
         var maxZoom = this.get('maxZoom');
         var zoom = this.get('zoom');
 
-        var map = L.map(this.$('.panel-body')[0], {
+        var map = L.map(this.$('.map-body')[0], {
             center: [20.0, 5.0],
-            zoom: zoom,
-            minZoom: minZoom,
-            maxZoom: maxZoom
+            // zoom: zoom,
+            // minZoom: minZoom,
+            // maxZoom: maxZoom
         });
+
+        // this.set('progress', this.$('.map-progress'));
+        // this.set('progressBar', this.$('.map-progress-bar'));
 
         map.scrollWheelZoom.disable();
 
