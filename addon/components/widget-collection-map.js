@@ -2,17 +2,17 @@ import Ember from 'ember';
 import WidgetCollection from 'ember-eureka/widget-collection';
 import layout from '../templates/components/widget-collection-map';
 import L from 'ember-leaflet-hurry';
-
+import interpolate from 'ember-eureka/utils/string-interpolate';
 
 export default WidgetCollection.extend({
     layout: layout,
 
     label: Ember.computed.alias('config.label'),
 
-    titleProperty: Ember.computed('config.titleProperty', function() {
-        return this.getWithDefault('config.titleProperty', 'title');
-    }),
 
+    markerTitle: Ember.computed('config.markerTitle', function() {
+        return this.getWithDefault('config.markerTitle', '{title}');
+    }),
 
     latitudeProperty: Ember.computed('config.latitudeProperty', function() {
         return this.getWithDefault('config.latitudeProperty', 'latitude');
@@ -57,8 +57,10 @@ export default WidgetCollection.extend({
 
     _map: null,
 
-    collection:  Ember.computed('routeModel.query.hasChanged', 'store', function() {
+    collection:  Ember.computed('routeModel.query.hasChanged', 'store', 'config.query', function() {
         var query = this.get('routeModel.query')._toObject();
+        var queryConfig = this.getWithDefault('config.query', {});
+        Ember.setProperties(query, queryConfig);
         query._asJSONArray = true;
         return this.get('store').stream(query);
     }),
@@ -81,26 +83,23 @@ export default WidgetCollection.extend({
 
     renderMap: Ember.observer(
         'collection.[]', 'latitudeProperty', 'longitudeProperty',
-        'titleProperty', 'zoom', 'mapProvider', function() {
+        'zoom', 'markerTitle', function() {
         var map = this.get('_map');
+        var markersLayer = this.get('_markersLayer');
         if (!map) {
             map = this.initializeMap();
             this.set('_map', map);
-        } else {
-            map.eachLayer(function (layer) {
-                map.removeLayer(layer);
-            });
+        } else if (markersLayer) {
+            map.removeLayer(markersLayer);
         }
 
         var zoom = this.get('zoom');
-        var mapProvider = this.get('mapProvider');
-
-        var markers = L.markerClusterGroup();
+        var markersLayer = L.markerClusterGroup();
         // var markers = L.markerClusterGroup({ chunkedLoading: true, chunkProgress: this.updateProgressBar })
 
         var latitudePropertyName = this.get('latitudeProperty');
         var longitudePropertyName = this.get('longitudeProperty');
-        var titlePropertyName = this.get('titleProperty');
+        var markerTitle = this.get('markerTitle');
 
         var pinIcon = L.icon({
             iconUrl: '/images/leaflet/marker-icon.png',
@@ -109,25 +108,27 @@ export default WidgetCollection.extend({
         });
 
         var latLongs = [];
+        var that = this;
         this.get('collection').then(function(data) {
             data.forEach(function(item) {
+                let title = interpolate(markerTitle, item);
                 let latitude = Ember.get(item, latitudePropertyName);
                 let longitude = Ember.get(item, longitudePropertyName);
-                let title = Ember.get(item, titlePropertyName);
+
                 if (latitude && longitude) {
                     let latLong = new L.LatLng(latitude, longitude);
                     latLongs.push(latLong);
                     let marker = L.marker(latLong, {title: title, icon: pinIcon});
                     marker.bindPopup(title);
-                    markers.addLayer(marker);
+                    markersLayer.addLayer(marker);
                 }
             });
 
             // center the map into markers
             if (latLongs.length) {
                 map.fitBounds(new L.LatLngBounds(latLongs));
-                L.tileLayer.provider(mapProvider).addTo(map);
-                map.addLayer(markers);
+                map.addLayer(markersLayer);
+                that.set('_markersLayer', markersLayer);
             }
         });
     }),
@@ -137,15 +138,28 @@ export default WidgetCollection.extend({
         var maxZoom = this.get('maxZoom');
         var zoom = this.get('zoom');
 
+        var planLayer = L.tileLayer.provider('MapQuestOpen.OSM');
+        var satelliteLayer = L.tileLayer.provider('Esri.WorldImagery');
+
+        var baseLayers = {
+            "Plan": planLayer,
+            "Satellite": satelliteLayer
+        };
+
+
         var map = L.map(this.$('.map-body')[0], {
             center: [20.0, 5.0],
+            maxZoom: maxZoom,
+            layers: [satelliteLayer]
             // zoom: zoom,
             // minZoom: minZoom,
-            // maxZoom: maxZoom
         });
 
         // this.set('progress', this.$('.map-progress'));
         // this.set('progressBar', this.$('.map-progress-bar'));
+
+        L.control.layers(baseLayers, null).addTo(map);
+        L.control.scale({metric: true}).addTo(map);
 
         map.scrollWheelZoom.disable();
 

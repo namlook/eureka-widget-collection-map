@@ -11,8 +11,8 @@ Display an Eureka collection on a map. Usage:
     // the model property name that represente the longitude
     longitudeProperty: 'longitude',
 
-    // the model property name to represente the record
-    titleProperty: 'title',
+    // an interpolated string to represent the marker
+    markerTitle: '{title}',
 
     // the panel header label
     label: null
