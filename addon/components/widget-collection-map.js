@@ -39,7 +39,6 @@ export default WidgetCollection.extend({
         var mapHeight = this.getWithDefault('config.height', 300);
         mapHeight = parseInt(mapHeight, 10);
         return new Ember.Handlebars.SafeString(`height:${mapHeight}px;text-align:center`);
-        // return ("height: " + mapHeight + 'px').htmlSafe();
     }),
 
     /** mapProvider
@@ -89,8 +88,10 @@ export default WidgetCollection.extend({
         if (!map) {
             map = this.initializeMap();
             this.set('_map', map);
-        } else if (markersLayer) {
-            map.removeLayer(markersLayer);
+        } else {
+            map.eachLayer(function (layer) {
+                map.removeLayer(layer);
+            });
         }
 
         var zoom = this.get('zoom');
@@ -126,9 +127,9 @@ export default WidgetCollection.extend({
 
             // center the map into markers
             if (latLongs.length) {
+                map.addLayer(that.get('_defaultLayer'));
                 map.fitBounds(new L.LatLngBounds(latLongs));
                 map.addLayer(markersLayer);
-                that.set('_markersLayer', markersLayer);
             }
         });
     }),
@@ -140,6 +141,8 @@ export default WidgetCollection.extend({
 
         var planLayer = L.tileLayer.provider('MapQuestOpen.OSM');
         var satelliteLayer = L.tileLayer.provider('Esri.WorldImagery');
+
+        this.set('_defaultLayer', satelliteLayer);
 
         var baseLayers = {
             "Plan": planLayer,
