@@ -56,13 +56,36 @@ export default WidgetCollection.extend({
 
     _map: null,
 
-    collection:  Ember.computed('routeModel.query.hasChanged', 'store', 'config.query', function() {
-        var query = this.get('routeModel.query')._toObject();
-        var queryConfig = this.getWithDefault('config.query', {});
+    collection:  Ember.computed('routeModel.query.hasChanged',
+                                'store',
+                                'config.query', function() {
+
+        let routeQuery = this.get('routeModel.query')._toObject();
+        let query = {};
+        for (let fieldName of Object.keys(routeQuery)) {
+            if (fieldName[0] === '_') {
+                query[fieldName.slice(1)] = routeQuery[fieldName];
+            } else {
+                query.filter = query.filter || {};
+                query.filter[fieldName] = routeQuery[fieldName];
+            }
+        }
+        let queryConfig = this.getWithDefault('config.query', {});
         Ember.setProperties(query, queryConfig);
-        query._asJSONArray = true;
-        return this.get('store').stream(query);
+        if (!query.limit) {
+            query.limit = 10000;
+        }
+        let store = this.get('store');
+        store.count(query).then((total) => {
+            if (total > query.limit) {
+                this.set('thresholdWarning', true);
+                this.set('thresholdLimit', query.limit);
+            }
+        });
+        return store.stream(query);
+
     }),
+    thresholdWarning: false,
 
     // updateProgressBar: function(processed, total, elapsed, layersArray) {
     //     var progress = this.get('progress');
@@ -109,12 +132,11 @@ export default WidgetCollection.extend({
         });
 
         var latLongs = [];
-        var that = this;
-        this.get('collection').then(function(data) {
-            data.forEach(function(item) {
-                let title = interpolate(markerTitle, item);
-                let latitude = Ember.get(item, latitudePropertyName);
-                let longitude = Ember.get(item, longitudePropertyName);
+        this.get('collection').then((data) => {
+            for (let item of data) {
+                const title = interpolate(markerTitle, item);
+                const latitude = Ember.get(item, latitudePropertyName);
+                const longitude = Ember.get(item, longitudePropertyName);
 
                 if (latitude && longitude) {
                     let latLong = new L.LatLng(latitude, longitude);
@@ -123,11 +145,11 @@ export default WidgetCollection.extend({
                     marker.bindPopup(title);
                     markersLayer.addLayer(marker);
                 }
-            });
+            }
 
             // center the map into markers
             if (latLongs.length) {
-                map.addLayer(that.get('_defaultLayer'));
+                map.addLayer(this.get('_defaultLayer'));
                 map.fitBounds(new L.LatLngBounds(latLongs));
                 map.addLayer(markersLayer);
             }

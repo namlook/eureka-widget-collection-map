@@ -4,6 +4,10 @@
 module.exports = {
     name: 'eureka-widget-collection-map',
 
+    isDevelopingAddon: function() {
+      return true;
+    },
+
     included: function(app) {
         this._super.included(app);
 

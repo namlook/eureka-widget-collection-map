@@ -6,6 +6,15 @@
 
 
     <div class="panel-body">
+        {{#if thresholdWarning}}
+            <div class="alert alert-warning alert-dismissible" role="alert">
+                <button type="button"
+                        class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <strong>Warning!</strong> there is too much data to display them all on the map, only the first {{thresholdLimit}} items are shown.
+            </div>
+        {{/if}}
         <div class="map-body" style={{mapStyle}}>
             {{#if collection.isPending}}
                 <p>Fetching data... Please wait, it may take a while...</p>
