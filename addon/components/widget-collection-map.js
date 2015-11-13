@@ -107,7 +107,6 @@ export default WidgetCollection.extend({
         'collection.[]', 'latitudeProperty', 'longitudeProperty',
         'zoom', 'markerTitle', function() {
         var map = this.get('_map');
-        var markersLayer = this.get('_markersLayer');
         if (!map) {
             map = this.initializeMap();
             this.set('_map', map);
@@ -117,7 +116,7 @@ export default WidgetCollection.extend({
             });
         }
 
-        var zoom = this.get('zoom');
+        // var zoom = this.get('zoom');
         var markersLayer = L.markerClusterGroup();
         // var markers = L.markerClusterGroup({ chunkedLoading: true, chunkProgress: this.updateProgressBar })
 
@@ -157,9 +156,9 @@ export default WidgetCollection.extend({
     }),
 
     initializeMap: function() {
-        var minZoom = this.get('minZoom');
+        // var minZoom = this.get('minZoom');
         var maxZoom = this.get('maxZoom');
-        var zoom = this.get('zoom');
+        // var zoom = this.get('zoom');
 
         var planLayer = L.tileLayer.provider('MapQuestOpen.OSM');
         var satelliteLayer = L.tileLayer.provider('Esri.WorldImagery');
