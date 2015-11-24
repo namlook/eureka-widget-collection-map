@@ -76,13 +76,21 @@ export default WidgetCollection.extend({
             query.limit = 10000;
         }
         let store = this.get('store');
-        store.count(query).then((total) => {
-            if (total > query.limit) {
-                this.set('thresholdWarning', true);
-                this.set('thresholdLimit', query.limit);
-            }
-        });
-        return store.stream(query);
+        // store.count(query).then((total) => {
+        //     if (total > query.limit) {
+        //         this.set('thresholdWarning', true);
+        //         this.set('thresholdLimit', query.limit);
+        //     }
+        // });
+        // return store.stream(query);
+        var latitudePropertyName = this.get('latitudeProperty');
+        var longitudePropertyName = this.get('longitudeProperty');
+        let aggregator = {
+            'latitude': latitudePropertyName,
+            'longitude': longitudePropertyName,
+            'title': 'title'
+        };
+        return store.aggregate(aggregator, query);
 
     }),
     thresholdWarning: false,
@@ -133,9 +141,10 @@ export default WidgetCollection.extend({
         var latLongs = [];
         this.get('collection').then((data) => {
             for (let item of data) {
-                const title = interpolate(markerTitle, item);
-                const latitude = Ember.get(item, latitudePropertyName);
-                const longitude = Ember.get(item, longitudePropertyName);
+                // const title = interpolate(markerTitle, item);
+                // const latitude = Ember.get(item, latitudePropertyName);
+                // const longitude = Ember.get(item, longitudePropertyName);
+                const {title, latitude, longitude} = item;
 
                 if (latitude && longitude) {
                     let latLong = new L.LatLng(latitude, longitude);
