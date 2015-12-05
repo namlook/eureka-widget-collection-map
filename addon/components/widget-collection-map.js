@@ -14,6 +14,8 @@ export default WidgetCollection.extend({
         return this.getWithDefault('config.markerTitle', '{title}');
     }),
 
+    aggregation: Ember.computed.alias('config.aggregation'),
+
     latitudeProperty: Ember.computed('config.latitudeProperty', function() {
         return this.getWithDefault('config.latitudeProperty', 'latitude');
     }),
@@ -56,9 +58,9 @@ export default WidgetCollection.extend({
 
     _map: null,
 
-    collection:  Ember.computed('routeModel.query.hasChanged',
-                                'store',
-                                'config.query', function() {
+    collection:  Ember.computed(
+        'routeModel.query.hasChanged', 'store', 'config.query',
+        'aggregation', function() {
 
         let routeQuery = this.get('routeModel.query')._toObject();
         let query = {};
@@ -85,11 +87,12 @@ export default WidgetCollection.extend({
         // return store.stream(query);
         var latitudePropertyName = this.get('latitudeProperty');
         var longitudePropertyName = this.get('longitudeProperty');
-        let aggregator = {
-            'latitude': latitudePropertyName,
-            'longitude': longitudePropertyName,
-            'title': 'title'
-        };
+        // let aggregator = {
+        //     'latitude': latitudePropertyName,
+        //     'longitude': longitudePropertyName,
+        //     'title': 'title'
+        // };
+        let aggregator = this.get('aggregation');
         return store.aggregate(aggregator, query);
 
     }),
@@ -141,10 +144,10 @@ export default WidgetCollection.extend({
         var latLongs = [];
         this.get('collection').then((data) => {
             for (let item of data) {
-                // const title = interpolate(markerTitle, item);
                 // const latitude = Ember.get(item, latitudePropertyName);
                 // const longitude = Ember.get(item, longitudePropertyName);
-                const {title, latitude, longitude} = item;
+                let {title, latitude, longitude} = item;
+                title = interpolate(markerTitle, item);
 
                 if (latitude && longitude) {
                     let latLong = new L.LatLng(latitude, longitude);
